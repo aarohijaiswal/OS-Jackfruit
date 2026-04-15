@@ -1,111 +1,126 @@
-# Multi-Container Runtime
+# Lightweight Container Runtime (OS Project)
 
-A lightweight Linux container runtime in C with a long-running supervisor and a kernel-space memory monitor.
+##  Overview
 
-Read [`project-guide.md`](project-guide.md) for the full project specification.
+This project implements a **lightweight container runtime similar to Docker** using Linux system calls and kernel modules.
 
----
-
-## Getting Started
-
-### 1. Fork the Repository
-
-1. Go to [github.com/shivangjhalani/OS-Jackfruit](https://github.com/shivangjhalani/OS-Jackfruit)
-2. Click **Fork** (top-right)
-3. Clone your fork:
-
-```bash
-git clone https://github.com/<your-username>/OS-Jackfruit.git
-cd OS-Jackfruit
-```
-
-### 2. Set Up Your VM
-
-You need an **Ubuntu 22.04 or 24.04** VM with **Secure Boot OFF**. WSL will not work.
-
-Install dependencies:
-
-```bash
-sudo apt update
-sudo apt install -y build-essential linux-headers-$(uname -r)
-```
-
-### 3. Run the Environment Check
-
-```bash
-cd boilerplate
-chmod +x environment-check.sh
-sudo ./environment-check.sh
-```
-
-Fix any issues reported before moving on.
-
-### 4. Prepare the Root Filesystem
-
-```bash
-mkdir rootfs-base
-wget https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/x86_64/alpine-minirootfs-3.20.3-x86_64.tar.gz
-tar -xzf alpine-minirootfs-3.20.3-x86_64.tar.gz -C rootfs-base
-
-# Make one writable copy per container you plan to run
-cp -a ./rootfs-base ./rootfs-alpha
-cp -a ./rootfs-base ./rootfs-beta
-```
-
-Do not commit `rootfs-base/` or `rootfs-*` directories to your repository.
-
-### 5. Understand the Boilerplate
-
-The `boilerplate/` folder contains starter files:
-
-| File                   | Purpose                                             |
-| ---------------------- | --------------------------------------------------- |
-| `engine.c`             | User-space runtime and supervisor skeleton          |
-| `monitor.c`            | Kernel module skeleton                              |
-| `monitor_ioctl.h`      | Shared ioctl command definitions                    |
-| `Makefile`             | Build targets for both user-space and kernel module |
-| `cpu_hog.c`            | CPU-bound test workload                             |
-| `io_pulse.c`           | I/O-bound test workload                             |
-| `memory_hog.c`         | Memory-consuming test workload                      |
-| `environment-check.sh` | VM environment preflight check                      |
-
-Use these as your starting point. You are free to restructure the repository however you want — the submission requirements are listed in the project guide.
-
-### 6. Build and Verify
-
-```bash
-cd boilerplate
-make
-```
-
-If this compiles without errors, your environment is ready.
-
-### 7. GitHub Actions Smoke Check
-
-Your fork will inherit a minimal GitHub Actions workflow from this repository.
-
-That workflow only performs CI-safe checks:
-
-- `make -C boilerplate ci`
-- user-space binary compilation (`engine`, `memory_hog`, `cpu_hog`, `io_pulse`)
-- `./boilerplate/engine` with no arguments must print usage and exit with a non-zero status
-
-The CI-safe build command is:
-
-```bash
-make -C boilerplate ci
-```
-
-This smoke check does not test kernel-module loading, supervisor runtime behavior, or container execution.
+It supports:
+- Process isolation using namespaces  
+- Multi-container management  
+- CLI-based control using IPC  
+- Logging using producer-consumer model  
+- Kernel-level memory monitoring  
+- Scheduler behavior analysis  
 
 ---
 
-## What to Do Next
+## Features
 
-Read [`project-guide.md`](project-guide.md) end to end. It contains:
+###  Task 1: Container Runtime
+- Containers created using `clone()`
+- Isolation using:
+  - PID namespace  
+  - UTS namespace  
+  - Mount namespace  
+- Filesystem isolation using `chroot()`
 
-- The six implementation tasks (multi-container runtime, CLI, logging, kernel monitor, scheduling experiments, cleanup)
-- The engineering analysis you must write
-- The exact submission requirements, including what your `README.md` must contain (screenshots, analysis, design decisions)
+---
 
-Your fork's `README.md` should be replaced with your own project documentation as described in the submission package section of the project guide. (As in get rid of all the above content and replace with your README.md)
+###  Task 2: CLI + IPC
+- CLI commands:
+  - `start`
+  - `stop`
+  - `ps`
+- Communication using **FIFO (named pipe)**
+
+---
+
+###  Task 3: Logging System
+- Container output captured via **pipe**
+- Stored using **producer-consumer model**
+- Synchronization using:
+  - mutex  
+  - condition variables  
+- Logs stored in:
+  - `alpha.log`
+  - `beta.log`
+
+---
+
+###  Task 4: Kernel Module
+- Custom kernel module (`monitor.ko`)
+- Tracks memory usage (RSS)
+- Uses `ioctl` for communication
+- Implements:
+  - Soft limit → warning  
+  - Hard limit → kill process  
+
+---
+
+###  Task 5: Scheduler Experiments
+
+#### Workloads
+- **CPU-bound (`cpu_hog`)** → infinite loop  
+- **IO-bound (`io_pulse`)** → uses sleep  
+
+####  Experiments
+
+**Experiment 1: CPU vs CPU (different nice values)**  
+- nice = 0 → higher CPU  
+- nice = 10 → lower CPU  
+
+**Observation:**  
+Lower nice value gets more CPU → higher priority.
+
+---
+
+**Experiment 2: CPU vs IO**  
+- CPU-bound → high CPU usage  
+- IO-bound → low CPU usage  
+
+**Observation:**  
+IO processes yield CPU, scheduler favors CPU-bound tasks.
+
+---
+
+**Experiment 3: Equal priority**  
+- Both processes share CPU fairly  
+
+**Observation:**  
+Linux scheduler ensures fairness.
+
+---
+
+###  Task 6: Cleanup & Control
+- `stop <id>` → stops container  
+- `exit` → cleans all containers  
+- Removes FIFO  
+- Kills all running processes  
+
+---
+
+##  Project Structure
+
+OS-Jackfruit/
+│
+├── engine.c
+├── monitor.c
+├── monitor_ioctl.h
+├── Makefile
+│
+├── rootfs-alpha/
+├── rootfs-beta/
+│
+├── cpu_hog.c
+├── io_pulse.c
+│
+├── alpha.log
+├── beta.log
+
+
+
+
+
+
+
+
