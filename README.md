@@ -1,95 +1,64 @@
-# Lightweight Container Runtime (OS Project)
+#  Lightweight Container Runtime (OS Mini Project)
 
-##  Overview
+## Team Members
 
-This project implements a **lightweight container runtime similar to Docker** using Linux system calls and kernel modules.
-
-It supports:
-- Process isolation using namespaces  
-- Multi-container management  
-- CLI-based control using IPC  
-- Logging using producer-consumer model  
-- Kernel-level memory monitoring  
-- Scheduler behavior analysis  
+- **AADITYA VASHISHT** — PES1UG24CS004  
+- **AAROHI JAISWAL** — PES1UG24CS009  
 
 ---
 
-## Features
+##  Project Overview
+
+This project implements a lightweight container runtime using Linux system programming concepts such as namespaces, chroot, IPC, and kernel modules. It provides features like container lifecycle management, logging, memory monitoring, scheduler analysis, and cleanup.
+
+---
+
+## ⚙️ Features Implemented
 
 ###  Task 1: Container Runtime
 - Containers created using `clone()`
-- Isolation using:
-  - PID namespace  
-  - UTS namespace  
-  - Mount namespace  
+- PID, UTS, and Mount namespaces used
 - Filesystem isolation using `chroot()`
+- Multiple containers supported
 
 ---
 
 ###  Task 2: CLI + IPC
-- CLI commands:
+- Commands implemented:
   - `start`
   - `stop`
   - `ps`
-- Communication using **FIFO (named pipe)**
+- Communication via FIFO (`/tmp/engine_cmd`)
 
 ---
 
 ###  Task 3: Logging System
-- Container output captured via **pipe**
-- Stored using **producer-consumer model**
-- Synchronization using:
-  - mutex  
-  - condition variables  
-- Logs stored in:
-  - `alpha.log`
-  - `beta.log`
+- Container output captured using pipes
+- Producer-consumer model implemented
+- Logs stored in files (e.g., `logger.log`)
 
 ---
 
 ###  Task 4: Kernel Module
-- Custom kernel module (`monitor.ko`)
+- Custom module `monitor.ko`
 - Tracks memory usage (RSS)
-- Uses `ioctl` for communication
-- Implements:
-  - Soft limit → warning  
-  - Hard limit → kill process  
+- Uses `ioctl`
+- Soft limit → warning  
+- Hard limit → process kill  
 
 ---
 
-###  Task 5: Scheduler Experiments
+###  Task 5: Scheduler Analysis
 
-#### Workloads
-- **CPU-bound (`cpu_hog`)** → infinite loop  
-- **IO-bound (`io_pulse`)** → uses sleep  
+Commands used:
 
-####  Experiments
-
-**Experiment 1: CPU vs CPU (different nice values)**  
-- nice = 0 → higher CPU  
-- nice = 10 → lower CPU  
-
-**Observation:**  
-Lower nice value gets more CPU → higher priority.
-
----
-
-**Experiment 2: CPU vs IO**  
-- CPU-bound → high CPU usage  
-- IO-bound → low CPU usage  
-
-**Observation:**  
-IO processes yield CPU, scheduler favors CPU-bound tasks.
-
----
-
-**Experiment 3: Equal priority**  
-- Both processes share CPU fairly  
-
-**Observation:**  
-Linux scheduler ensures fairness.
-
----
+```bash
+yes > /dev/null &
+yes > /dev/null &
+ps -eo pid,ni,pcpu,comm | grep yes
+sudo renice -10 -p <PID1>
+sudo renice 10 -p <PID2>
+watch -n 1 "ps -eo pid,ni,pcpu,comm | grep yes"
 
 ###  Task 6: Cleanup & Control
 - `stop <id>` → stops container  
@@ -98,6 +67,19 @@ Linux scheduler ensures fairness.
 - Kills all running processes  
 
 ---
+
+### Task 7: Scheduler Verification
+Verified scheduler behavior using CPU-bound processes
+
+Observed:
+Different NI values
+Different %CPU usage
+
+Task 8: System Cleanup & No Zombies
+
+Observation:
+No zombie processes remained after cleanup.
+
 
 ##  Project Structure
 
